@@ -27,15 +27,15 @@
       * [3.2.3 STATE DB](#323-state-db)
       * [3.2.4 ASIC DB](#324-asic-db)
       * [3.2.5 COUNTER DB](#325-counter-db)
-    * [3.3 CLI](#36-cli)
-      * [3.3.1 Data Models](#361-data-models)
-      * [3.3.2 REST API Support](#363-rest-api-support)
-      * [3.3.3 gNMI Support](#364-gnmi-support)
+    * [3.3 User Interface](#33-user-interface)
+      * [3.3.1 Data Models](#331-data-models)
+      * [3.3.2 REST API Support](#332-rest-api-support)
+      * [3.3.3 gNMI Support](#333-gnmi-support)
   * [4 Flow Diagrams](#4-flow-diagrams)
   * [5 Error Handling](#5-error-handling)
-  * [6 Unit Test Cases](#9-unit-test-cases)
-    * [6.1 Functional Test Cases](#91-functional-test-cases)
-    * [6.2 Negative Test Cases](#92-negative-test-cases)
+  * [6 Unit Test Cases](#6-unit-test-cases)
+    * [6.1 Functional Test Cases](#61-functional-test-cases)
+    * [6.2 Negative Test Cases](#62-negative-test-cases)
   
 # List of Tables
 [Table 1: Abbreviations](#table-1-abbreviations)
@@ -50,12 +50,70 @@ This document provides general information about the OpenConfig configuration of
 
 # Scope
 - This document describes the high level design of OpenConfig configuration of Ethernet interfaces via REST and gNMI in SONiC.
-- This does not cover the SONiC CLICK and KLISH CLI.
+- This does not cover the SONiC KLISH CLI.
 - This covers only Ethernet interfaces configuration.
 - This does not support subinterfaces configuration.
 - This does not cover gNMI subscription.
 - This does not cover secondary IP configuration.
-- Alias support for the interface names are not available to configure for Ethernet.
+- Supported attributes in OpenConfig YANG tree:
+  ```  
+  module: openconfig-interfaces
+  +--rw interfaces
+     +--rw interface* [name]
+        +--rw name               -> ../config/name
+        +--rw config
+        |  +--rw name?          string
+        |  +--rw mtu?           uint16
+        |  +--rw description?   string
+        |  +--rw enabled?       boolean
+        +--ro state
+        |  +--ro name?           string
+        |  +--ro mtu?            uint16
+        |  +--ro description?    string
+        |  +--ro enabled?        boolean
+        |  +--ro admin-status    enumeration
+        +--rw subinterfaces
+        |  +--rw subinterface* [index]
+        |     +--rw index         -> ../config/index
+        |     +--rw config
+        |     |  +--rw index?         uint32
+        |     |  +--rw description?   string
+        |     |  +--rw enabled?       boolean
+        |     +--ro state
+        |     |  +--ro index?         uint32
+        |     |  +--ro description?   string
+        |     |  +--ro enabled?       boolean
+        |     |  +--ro name?          string
+        |     +--rw oc-ip:ipv4
+        |     |  +--rw oc-ip:addresses
+        |     |     +--rw oc-ip:address* [ip]
+        |     |        +--rw oc-ip:ip        -> ../config/ip
+        |     |        +--rw oc-ip:config
+        |     |        |  +--rw oc-ip:ip?              oc-inet:ipv4-address
+        |     |        |  +--rw oc-ip:prefix-length?   uint8
+        |     |        +--ro oc-ip:state
+        |     |           +--ro oc-ip:ip?              oc-inet:ipv4-address
+        |     |           +--ro oc-ip:prefix-length?   uint8
+        |     +--rw oc-ip:ipv6
+        |        +--rw oc-ip:addresses
+        |        |  +--rw oc-ip:address* [ip]
+        |        |     +--rw oc-ip:ip        -> ../config/ip
+        |        |     +--rw oc-ip:config
+        |        |     |  +--rw oc-ip:ip?              oc-inet:ipv6-address
+        |        |     |  +--rw oc-ip:prefix-length    uint8
+        |        |     +--ro oc-ip:state
+        |        |        +--ro oc-ip:ip?              oc-inet:ipv6-address
+        |        |        +--ro oc-ip:prefix-length    uint8
+        |        +--rw oc-ip:config
+        |           +--rw oc-ip:enabled?   boolean
+        +--rw oc-eth:ethernet
+           +--rw oc-eth:config
+           |  +--rw oc-eth:auto-negotiate?   boolean
+           |  +--rw oc-eth:port-speed?       identityref
+           +--ro oc-eth:state
+              +--ro oc-eth:auto-negotiate?   boolean
+              +--ro oc-eth:port-speed?       identityref
+
 
 # Definition/Abbreviation
 ### Table 1: Abbreviations
@@ -83,9 +141,9 @@ The maximum number of interfaces depends on number of Ethernet interfaces suppor
 
 ## 1.2 Design Overview
 ### 1.2.1 Basic Approach
-SONiC already supports Ethernet interfaces configurations such as Get, Patch and Delete via REST and gNMI. This feature adds support for OpenConfig based YANG models using transformer based implementation instead of App.
+SONiC already supports Ethernet interfaces configurations such as Get, Patch and Delete via REST and gNMI. This feature adds support for OpenConfig based YANG models using transformer based implementation instead of translib infra.
 ### 1.2.2 Container
-The code changes for this feature are part of *Management Framework* which includes the REST server and *gnmi* container for gNMI support in *sonic-mgmt-common* repository.
+The code changes for this feature are part of *Management Framework* container which includes the REST server and *gnmi* container for gNMI support in *sonic-mgmt-common* repository.
 
 # 2 Functionality
 ## 2.1 Target Deployment Use Cases
@@ -108,9 +166,9 @@ There are no changes to ASIC DB schema definition.
 ### 3.2.5 COUNTER DB
 There are no changes to COUNTER DB schema definition.
 
-## 3.3 CLI
+## 3.3 User Interface
 ### 3.3.1 Data Models
-The higher speeds for Ethernet is brought in to openconfig-if-ethernet.yang from the [OpenConfig YANG](https://github.com/openconfig/public/blob/master/release/models/interfaces/openconfig-if-ethernet.yang#L263) 
+Support for additional speeds for Ethernet are brought in to openconfig-if-ethernet.yang from the [OpenConfig YANG community](https://github.com/openconfig/public/blob/master/release/models/interfaces/openconfig-if-ethernet.yang#L263) 
 ```
     identity SPEED_200GB {
     base ETHERNET_SPEED;
@@ -135,16 +193,27 @@ The higher speeds for Ethernet is brought in to openconfig-if-ethernet.yang from
 ### 3.3.2 REST API Support
 #### 3.3.2.1 GET
 Supported
+Sample GET output without IPv4 configuration on Ethernet104: 
 ```
 curl -X GET -k "https://100.94.113.103/restconf/data/openconfig-interfaces:interfaces/interface=Ethernet104" -H "accept: application/yang-data+json"
 {"openconfig-interfaces:interface":[{"config":{"enabled":true,"mtu":9100,"name":"Ethernet104"},"openconfig-if-ethernet:ethernet":{"config":{"auto-negotiate":false,"port-speed":"openconfig-if-ethernet:SPEED_10GB"},"state":{"auto-negotiate":false,"port-speed":"openconfig-if-ethernet:SPEED_10GB"}},"name":"Ethernet104","state":{"admin-status":"UP","description":"","enabled":true,"mtu":9100,"name":"Ethernet104"},"subinterfaces":{"subinterface":[{"config":{"index":0},"index":0,"openconfig-if-ip:ipv6":{"config":{"enabled":false}},"state":{"index":0}}]}}]}
 ```
+Sample GET output with IPv4 configuration on Ethernet104:
 ```
 admin@sonic:~$ curl -X GET -k "https://100.94.113.103/restconf/data/openconfig-interfaces:interfaces/interface=Ethernet104" -H "accept: application/yang-data+json"
 {"openconfig-interfaces:interface":[{"config":{"description":"patch_leaf","enabled":true,"mtu":9150,"name":"Ethernet104"},"openconfig-if-ethernet:ethernet":{"config":{"auto-negotiate":true,"port-speed":"openconfig-if-ethernet:SPEED_10GB"},"state":{"auto-negotiate":true,"port-speed":"openconfig-if-ethernet:SPEED_10GB"}},"name":"Ethernet104","state":{"admin-status":"UP","description":"patch_leaf","enabled":true,"mtu":9150,"name":"Ethernet104"},"subinterfaces":{"subinterface":[{"config":{"index":0},"index":0,"openconfig-if-ip:ipv4":{"addresses":{"address":[{"config":{"ip":"10.0.0.248","prefix-length":31},"ip":"10.0.0.248","state":{"ip":"10.0.0.248","prefix-length":31}}]}},"openconfig-if-ip:ipv6":{"config":{"enabled":false}},"state":{"index":0}}]}}]}
 ```
 #### 3.3.2.2 SET
 Supported
+PATCH at leaf node for MTU
+```
+curl -X PATCH -k  "https://100.94.113.103/restconf/data/openconfig-interfaces:interfaces/interface=Ethernet104/config/mtu" -H "accept: */*" -H "Content-Type: application/yang-data+json" -d "{\"openconfig-interfaces:mtu\":9150}"
+```
+Verify MTU PATCH with GET:
+```
+curl -X GET -k "https://100.94.113.103/restconf/data/openconfig-interfaces:interfaces/interface=Ethernet104/config/mtu" -H "accept: application/yang-data+json"
+{"openconfig-interfaces:mtu":9150}
+```
 #### 3.3.2.3 DELETE
 Supported
 ### 3.3.3 gNMI Support
@@ -174,7 +243,7 @@ Mapping attributes between OpenConfig YANG and SONiC YANG:
 |   prefix-length         |      ip-prefix          |
 
 # 5 Error Handling
-Configuration for port-speeds not present in YANG will report an error.
+Invalid configurations will report an error.
 # 6 Unit Test cases
 ## 6.1 Functional Test Cases
 1. Verify that GET, PATCH and DELETE for mtu works as expected via REST and gNMI.
