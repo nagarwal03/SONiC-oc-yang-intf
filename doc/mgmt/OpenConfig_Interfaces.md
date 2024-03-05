@@ -192,7 +192,7 @@ Support for additional speeds for Ethernet are brought in to openconfig-if-ether
   ```
 ### 3.3.2 REST API Support
 #### 3.3.2.1 GET
-Supported
+Supported at leaf level as well.
 Sample GET output without IPv4 configuration on Ethernet104: 
 ```
 curl -X GET -k "https://100.94.113.103/restconf/data/openconfig-interfaces:interfaces/interface=Ethernet104" -H "accept: application/yang-data+json"
@@ -204,18 +204,22 @@ admin@sonic:~$ curl -X GET -k "https://100.94.113.103/restconf/data/openconfig-i
 {"openconfig-interfaces:interface":[{"config":{"description":"patch_leaf","enabled":true,"mtu":9150,"name":"Ethernet104"},"openconfig-if-ethernet:ethernet":{"config":{"auto-negotiate":true,"port-speed":"openconfig-if-ethernet:SPEED_10GB"},"state":{"auto-negotiate":true,"port-speed":"openconfig-if-ethernet:SPEED_10GB"}},"name":"Ethernet104","state":{"admin-status":"UP","description":"patch_leaf","enabled":true,"mtu":9150,"name":"Ethernet104"},"subinterfaces":{"subinterface":[{"config":{"index":0},"index":0,"openconfig-if-ip:ipv4":{"addresses":{"address":[{"config":{"ip":"10.0.0.248","prefix-length":31},"ip":"10.0.0.248","state":{"ip":"10.0.0.248","prefix-length":31}}]}},"openconfig-if-ip:ipv6":{"config":{"enabled":false}},"state":{"index":0}}]}}]}
 ```
 #### 3.3.2.2 SET
-Supported
-PATCH at leaf node for MTU
+Supported at leaf level as well.
+Sample PATCH at leaf node for MTU
 ```
 curl -X PATCH -k  "https://100.94.113.103/restconf/data/openconfig-interfaces:interfaces/interface=Ethernet104/config/mtu" -H "accept: */*" -H "Content-Type: application/yang-data+json" -d "{\"openconfig-interfaces:mtu\":9150}"
 ```
-Verify MTU PATCH with GET:
+Sample Verify MTU PATCH with GET:
 ```
 curl -X GET -k "https://100.94.113.103/restconf/data/openconfig-interfaces:interfaces/interface=Ethernet104/config/mtu" -H "accept: application/yang-data+json"
 {"openconfig-interfaces:mtu":9150}
 ```
 #### 3.3.2.3 DELETE
-Supported
+Supported at leaf level as well.
+Illustration for DELETE at leaf level MTU:
+```
+curl -X DELETE -k "https://100.94.113.103/restconf/data/openconfig-interfaces:interfaces/interface=Ethernet104/config/mtu" -H "accept: */*"
+```
 ### 3.3.3 gNMI Support
 #### 3.3.3.1 GET
 Supported
