@@ -48,11 +48,10 @@
 This document provides general information about the OpenConfig configuration of portchannel (aggregate) interface in SONiC.
 
 # Scope
-- This document describes the high level design of OpenConfig configuration of portchannel interfaces via REST and gNMI in SONiC.
+- This document describes the high level design of configuration of portchannel interfaces using openconfig models via REST & gNMI. 
 - This does not cover the SONiC KLISH CLI.
 - This covers only the portchannel interfaces configuration.
 - This does not support subinterfaces configuration.
-- This does not cover gNMI subscription.
 - Supported attributes in OpenConfig YANG tree:
 
 ```  
@@ -156,10 +155,7 @@ module: openconfig-interfaces
 ## 1.1 Requirements
 ### 1.1.1 Functional Requirements
 1. Provide support for OpenConfig YANG models.
-2. Replace translib App based implementation with a Transformer based implementation of:
-    Configure/Set PortChannel interface attributes.
-    Get PortChannel interface attributes.
-    Delete PortChannel interface attributes.
+2.  Configure/Set, GET, and Delete PortChannel interface attributes.
 3. Support min-links attribute on PortChannel interfaces via REST and gNMI.
 4. Support interface attributes on PortChannel type. 
 ### 1.1.2 Configuration and Management Requirements
@@ -247,6 +243,53 @@ Supported
 Supported
 #### 3.3.2.3 DELETE
 Supported
+
+### 3.3.3 gNMI Subscription Support
+#### 3.3.3.1 On Change
+```
+root@sonic:/# gnmi_cli -insecure -logtostderr  -address 100.94.113.103:8080 -query_type s -streaming_type ON_CHANGE -v 0 -target OC-YANG -q /openconfig-interfaces:interfaces/interface[name=PortChannel103]/config 
+```
+#### 3.3.3.2 SAMPLE
+```
+root@sonic:/# gnmi_cli -insecure -logtostderr  -address 100.94.113.103:8080  -query_type s -streaming_type SAMPLE -target OC-YANG -q /openconfig-interfaces:interfaces/interface[name=PortChannel103]/config -heartbeat_interval 20
+```
+#### 3.3.3.4 Target Defined
+```
+root@sonic:/# gnmi_cli -insecure -logtostderr  -address 100.94.113.103:8080 -with_user_pass -query_type s -target OC-YANG -q /openconfig-interfaces:interfaces/interface[name=PortChannel103]/config
+```
+Example Output:
+```
+{
+  "OC-YANG": {
+    "openconfig-interfaces:interfaces": {
+      "interface": {
+        "PortChannel103": {
+          "config": {
+            "enabled": true,
+            "mtu": 9100,
+            "name": "PortChannel103"
+          }
+        }
+      }
+    }
+  }
+},
+{
+  "OC-YANG": {
+    "openconfig-interfaces:interfaces": {
+      "interface": {
+        "PortChannel103": {
+          "config": {
+            "description": "tst_target"
+          }
+        }
+      }
+    }
+  }
+},
+
+```
+
 # 4 Flow Diagrams
 Mapping attributes between OpenConfig YANG and SONiC YANG:
 |   OpenConfig YANG       |    Sonic-port YANG    |
